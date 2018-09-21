@@ -39,8 +39,10 @@ class Checkpoint(object):
         init(strip=not sys.stdout.isatty())
         self.id = id
         filename = id+'.log'
-        print(filename);
         logging.basicConfig(filename=filename,level=logging.INFO)
+        logging.info('------------------------------------------')
+        logging.info('Init ' + id + ' on ' + mqttBrokerHost)
+        logging.info('------------------------------------------')
         self.reader = reader
         self.mqttBrokerHost = mqttBrokerHost
         self.mqttBrokerPort = mqttBrokerPort
@@ -62,6 +64,7 @@ class Checkpoint(object):
 
         topic = self.id + "/" + self.TOPIC_CHECKIN
         publish.single(topic, json.dumps(messageCheckin), hostname=self.mqttBrokerHost)
+        logging.info(json.dumps(messageCheckin))
 #        print(topic + " topic to MQTT:")
 #        print(json.dumps(messageCheckin))
 
