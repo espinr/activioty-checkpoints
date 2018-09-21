@@ -38,7 +38,7 @@ class Checkpoint(object):
         '''
         init(strip=not sys.stdout.isatty())
         self.id = id
-        filename = 'logs/'+id+'.log'
+        filename = id+'.log'
         print(filename);
         logging.basicConfig(filename=filename,level=logging.INFO)
         self.reader = reader
