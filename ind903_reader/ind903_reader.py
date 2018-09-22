@@ -40,7 +40,7 @@ class Ind903Reader(reader.Reader):
         self._serial = serial.Serial(self.portName, self.baud)
         
         if self._serial is None:
-            raise DeviceException('No device found, please check the port name (i.e., python -m serial.tools.list_ports)')
+            raise DeviceException('No device found, please check the port name (i.e., python3 -m serial.tools.list_ports)')
 
     def write(self, data):
         """
