@@ -19,6 +19,7 @@ from time import gmtime
 import time
 
 import ntplib
+import urllib.request
 
 import paho.mqtt.publish as publish   
 
@@ -46,7 +47,23 @@ class Checkpoint(object):
         self.reader = reader
         self.mqttBrokerHost = mqttBrokerHost
         self.mqttBrokerPort = mqttBrokerPort
-        self.timestampOffset = self.getOffsetNTPTime()
+        if self.isInternetEnabled():
+            self.timestampOffset = self.getOffsetNTPTime()
+        else:
+            self.timestampOffset = 0
+            cprint(figlet_format('Working offline!', font='small'), 'yellow', 'on_red', attrs=['bold'])
+
+
+    def isInternetEnabled(self):
+        '''
+        Method to check if a URL is reachable. 
+        :returns True if a URL is reachable, False otherwise.
+        '''
+        try:
+            urllib.request.urlopen('http://google.com', timeout=1)
+            return True
+        except Exception as err: 
+            return False
 
     def checkinCompetitor(self, idCompetitorEPC, idCompetitorBibNumber):
         '''
@@ -63,8 +80,12 @@ class Checkpoint(object):
             messageCheckin["bib"] = idCompetitorBibNumber;
 
         topic = self.id + "/" + self.TOPIC_CHECKIN
-        publish.single(topic, json.dumps(messageCheckin), hostname=self.mqttBrokerHost)
-        logging.info(json.dumps(messageCheckin))
+        try:
+            publish.single(topic, json.dumps(messageCheckin), hostname=self.mqttBrokerHost)
+            logging.info(json.dumps(messageCheckin))
+        except Exception as err:
+            print ('Loggin locally')
+            logging.error(json.dumps(messageCheckin))
 #        print(topic + " topic to MQTT:")
 #        print(json.dumps(messageCheckin))
 
@@ -76,7 +97,10 @@ class Checkpoint(object):
         '''
         messageReady = { "checkpoint": { "id": self.id } , "timestamp" : self.getTimestamp() }  
         topic = self.id + "/" + self.TOPIC_READY
-        publish.single(topic, json.dumps(messageReady), hostname=self.mqttBrokerHost)
+        try:
+            publish.single(topic, json.dumps(messageReady), hostname=self.mqttBrokerHost)
+        except Exception as err:
+            print ('Still offline...')
         threading.Timer(30, self.pingReadyMessages).start()
         
     def execute(self):
