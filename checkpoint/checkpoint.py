@@ -65,15 +65,17 @@ class Checkpoint(object):
         except Exception as err: 
             return False
 
-    def checkinCompetitor(self, idCompetitorEPC, idCompetitorBibNumber):
+    def checkinCompetitor(self, idCompetitorEPC, idCompetitorBibNumber, offset=0):
         '''
         Method to be called once a competitor do a check-in. 
         This is a callback method to be send to the reader. 
         It sends a MQTT message to the broker like this:
         {"checkpoint" : {"id" : "RFID_IND903"}, "timestamp" : 1536508802, "bib": "121"}
         :param idCompetitor: String with the ID of the competitor that the reader detected.
+        :param offset: Number of seconds to be subtracted to the timestamp. This is used in 
+        case there is a forced security delay (i.e., manual input to be corrected on the fly)  
         '''            
-        messageCheckin = { "checkpoint": { "id": self.id }, "timestamp": self.getTimestamp() }
+        messageCheckin = { "checkpoint": { "id": self.id }, "timestamp": self.getTimestamp()-offset }
         if (idCompetitorEPC != None):
             messageCheckin["epc"] = idCompetitorEPC; 
         if (idCompetitorBibNumber != None):
@@ -86,8 +88,8 @@ class Checkpoint(object):
         except Exception as err:
             print ('Loggin locally')
             logging.error(json.dumps(messageCheckin))
-#        print(topic + " topic to MQTT:")
-#        print(json.dumps(messageCheckin))
+        #print(topic + " topic to MQTT:")
+        #print(json.dumps(messageCheckin))
 
     def pingReadyMessages(self):
         '''
