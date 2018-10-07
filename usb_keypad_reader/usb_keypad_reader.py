@@ -20,7 +20,7 @@ class USBKeypadReader(reader.Reader):
     # The buffer with bib IDs
     buffer = []
     # 10' of security margin to send the values to the server
-    SECURITY_MARGIN_SECONDS = 15
+    SECURITY_MARGIN_SECONDS = 5
 
     def __init__(self):
         '''

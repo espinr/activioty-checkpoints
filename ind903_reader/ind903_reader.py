@@ -4,6 +4,7 @@
 import binascii
 import time
 import traceback
+import _thread
 
 import serial 
 
@@ -11,7 +12,7 @@ import ind903_reader.ind903_packet as ind903Packet
 from reader import reader
 
 
-Ind903Packet = ind903Packet.Ind903Packet;
+Ind903Packet = ind903Packet.Ind903Packet
 
 class DeviceException(Exception):
     pass
@@ -58,7 +59,7 @@ class Ind903Reader(reader.Reader):
          :raises SerialException: when applied to a closed port.
         """
         while (True):
-            time.sleep(1)
+            #time.sleep(1)
             # At least a package of 4 bytes (minimum)
             # [ Head | Length | Address | Data[0…N] | Check ]
             if (self._serial.inWaiting()>=4):
@@ -83,36 +84,36 @@ class Ind903Reader(reader.Reader):
         """
         setAntennaPacket = Ind903Packet.generatePacketSetAntenna()
         startRealTimeInventoryPacket = Ind903Packet.generatePacketStartRealTimeInventory()
-        self.write(setAntennaPacket.packet)
-        print ('> ' + setAntennaPacket.toString())
-        receivedPacket = self.readCommand()
-        print ('< ' + receivedPacket.toString())
-        if (receivedPacket.isCommand(Ind903Packet.CMD_SET_WORKING_ANTENNA)):
-        	# to check if is a success of failure
-        	pass
         while (True):
             try:
+                self.write(setAntennaPacket.packet)
+                #print ('> ' + setAntennaPacket.toString())
+                receivedPacket = self.readCommand()
+                #print ('< ' + receivedPacket.toString())
+                if (receivedPacket.isCommand(Ind903Packet.CMD_SET_WORKING_ANTENNA)):
+                    # to check if is a success of failure
+                    pass
                 self.write(startRealTimeInventoryPacket.packet)
-                print ('> ' + startRealTimeInventoryPacket.toString())
+                #print ('> ' + startRealTimeInventoryPacket.toString())
                 # While a control package (success/error) is not received
                 while (True):
                     receivedPacket = self.readCommand()
-                    print ('< ' + receivedPacket.toString())
+                    #print ('< ' + receivedPacket.toString())
                     if (receivedPacket.isCommand(Ind903Packet.CMD_NAME_REAL_TIME_INVENTORY) and receivedPacket.isEndRealTimeInventory() != b'\x00'):
                         print(' [ end of inventory command found] ')
                         break   # jumps out the inventory loop
                     # Reads EPCs
-                    epc = receivedPacket.getTagEPCFromInventoryData();
+                    epc = receivedPacket.getTagEPCFromInventoryData()
                     if (int.from_bytes(epc,byteorder='big') == 0):
                         break # jumps out the inventory loop
                     epcString = binascii.hexlify(epc).decode()   
-                    print (' ****  [EPC found: ' + epcString + '] ****')
-                    processCallback(epcString, None)
+                    #print (' ****  [EPC found: ' + epcString + '] ****')
+                    _thread.start_new_thread(processCallback, (epcString, None))
             except Exception as ex:
                 traceback.print_exc()
 
-if __name__ == '__main__':
-    reader = Ind903Reader('/dev/ttyUSB0', 115200, 1000)
-    reader.doInventory()
+#if __name__ == '__main__':
+#    reader = Ind903Reader('/dev/ttyUSB0', 115200, 1000)
+#    reader.doInventory()
     
         

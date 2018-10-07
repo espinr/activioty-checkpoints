@@ -117,7 +117,8 @@ class Checkpoint(object):
         :return: (float) with the difference between the local clock and the NTP time (in seconds)
         '''
         c = ntplib.NTPClient()
-        response = c.request('europe.pool.ntp.org', version=3)
+        #response = c.request('europe.pool.ntp.org', version=3)
+        response = c.request('time.google.com', version=3)
         # convert from seconds since 1900 to seconds since 1970
         ntpUnixtime = response.tx_timestamp - 2208988800
         timestampOffset = time.time() - ntpUnixtime;
