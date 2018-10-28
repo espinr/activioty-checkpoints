@@ -2,12 +2,15 @@
 # -*- coding: utf-8 -*-
 
 import time
+from reader import reader
 import sys
 import traceback
+import binascii
 import mercury
+import _thread
 
 class M6eNanoReader(reader.Reader):
-        
+            
     def __init__(self, portName, baud=115200, antenna=1, readPower=500):
         """
         :param portName: serial port where the device is mounted (e.g., '/dev/ttyUSB0')
@@ -22,12 +25,27 @@ class M6eNanoReader(reader.Reader):
         self.region = "EU3"
         self.tagsType = "GEN2"
         self.readPower = readPower
+        self.nano = None
 
     def initialize(self):
-            self.reader = mercury.Reader(self.portName, baudrate=self.baud)
-            self.reader.set_region(self.region)
-            self.reader.set_read_plan([self.antenna], self.tagsType, read_power=self.readPower)
-            self.reader.start_reading(lambda tag: print(tag.epc, tag.antenna, tag.read_count, tag.rssi))
+        self.nano = mercury.Reader(self.portName, baudrate=115200)
+        self.nano.set_region(self.region)
+        self.nano.set_read_plan([self.antenna], self.tagsType, read_power=self.readPower)
+        print(self.nano.get_power_range())
+        print(self.nano.get_model())
+        print(self.nano.get_read_powers())
+        self.previousEpc = ""
+
+    def processTags(self, tags, processCallback):
+        """
+        Process the readed tags.
+        :param tags: array of TagReadData with the EPCs (in tags[x].epc) readed
+        :param processCallback(epcID, bibID): callback function to process a EPC found during inventory (bib=None).
+        """
+        for tag in tags:
+            epc = tag.epc.decode("utf-8")
+            print(epc)
+            processCallback(epc, None)
 
     def doInventory(self, processCallback):
         """
@@ -35,19 +53,10 @@ class M6eNanoReader(reader.Reader):
         the user to type quit or exit.
         :param processCallback(epcID, bibID): callback function to process a EPC found during inventory (bib=None).
         """
-        while (True):
-            try:
-                self.reader.start_reading(lambda tag: processCallback(tag.epc, None))
-                while True:
-                    message = input('type "quit" to exit...')
-                    if message == 'quit' or message == 'exit':
-                        reader.stop_reading()
-                        sys.exit()
-            except Exception as ex:
-                traceback.print_exc()
+        print("Reading tags...")
+        while True:
+            tags = self.nano.read()
+            if (len(tags) > 0):
+                _thread.start_new_thread(self.processTags, (tags, processCallback))
 
-#if __name__ == '__main__':
-#    reader = Ind903Reader('/dev/ttyUSB0', 115200, 1000)
-#    reader.doInventory()
-    
         
