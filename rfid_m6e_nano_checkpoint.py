@@ -22,6 +22,10 @@ if __name__ == '__main__':
     parser.add_argument('broker', help='MQTT broker hostname')
     parser.add_argument('power', help='Read power in cent-dBi (e.g. 500 or 2600)')
     args = parser.parse_args()
-    reader = m6e_nano_reader.M6eNanoReader(args.serial, 115200, 1, int(args.power))
-    checkpoint = checkpoint.Checkpoint(args.device, reader, args.broker)
-    checkpoint.execute()
+    try:
+        reader = m6e_nano_reader.M6eNanoReader(args.serial, 115200, 1, int(args.power))
+        checkpoint = checkpoint.Checkpoint(args.device, reader, args.broker)
+        checkpoint.execute()
+    except TypeError as err:
+        print("I cannot find the RFID module. Check wiring and try again")
+        sys.exit()

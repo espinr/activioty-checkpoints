@@ -15,6 +15,7 @@ from colorama import init
 from termcolor import cprint
 from pyfiglet import figlet_format
 from time import ctime
+import time
 from time import gmtime
 import time
 
@@ -28,6 +29,7 @@ class Checkpoint(object):
     
     TOPIC_READY     = 'ready'
     TOPIC_CHECKIN   = 'checkin'
+    CHECKIN_DEBOUNCE_THRESHOLD_SECONDS = 30
     
     def __init__(self, id, reader, mqttBrokerHost, mqttBrokerPort=1883):
         '''
@@ -47,11 +49,13 @@ class Checkpoint(object):
         self.reader = reader
         self.mqttBrokerHost = mqttBrokerHost
         self.mqttBrokerPort = mqttBrokerPort
-        if self.isInternetEnabled():
-            self.timestampOffset = self.getOffsetNTPTime()
-        else:
-            self.timestampOffset = 0
-            cprint(figlet_format('Working offline!', font='small'), 'yellow', 'on_red', attrs=['bold'])
+        self.checkinEpcList = {}
+        self.checkinBibList = {}
+        while not self.isInternetEnabled():
+            print("No internet connection. Trying to reconnect...")
+            time.sleep(5)            
+        self.timestampOffset = self.getOffsetNTPTime()
+        #print("Timestamp: " + str(self.timestampOffset))
 
 
     def isInternetEnabled(self):
@@ -65,6 +69,26 @@ class Checkpoint(object):
         except Exception as err: 
             return False
 
+    def isDuplicateCheckin(self, idCompetitorEPC, idCompetitorBibNumber, offset=0):
+        '''
+        Method to check if the either the EPC or the bib number is duplicated.
+        To do this there must be a minimum security debounce threshold. It is
+        checked agaist a local db in memory (checkinEpcList and checkinBibList)
+        '''
+        now = self.getTimestamp()
+        toReturn = True
+        if (idCompetitorEPC != None):
+            timestamp = self.checkinEpcList.setdefault(idCompetitorEPC)
+            if (timestamp == None or (timestamp + self.CHECKIN_DEBOUNCE_THRESHOLD_SECONDS < now)):
+                toReturn = False
+        self.checkinEpcList[idCompetitorEPC] = now
+        if (idCompetitorBibNumber != None):
+            timestamp = self.checkinBibList.setdefault(idCompetitorBibNumber)
+            if (timestamp == None or (timestamp + self.CHECKIN_DEBOUNCE_THRESHOLD_SECONDS < now)):
+                toReturn = False
+            self.checkinBibList[idCompetitorBibNumber] = now
+        return toReturn
+
     def checkinCompetitor(self, idCompetitorEPC, idCompetitorBibNumber, offset=0):
         '''
         Method to be called once a competitor do a check-in. 
@@ -74,7 +98,10 @@ class Checkpoint(object):
         :param idCompetitor: String with the ID of the competitor that the reader detected.
         :param offset: Number of seconds to be subtracted to the timestamp. This is used in 
         case there is a forced security delay (i.e., manual input to be corrected on the fly)  
-        '''            
+        '''
+        if (self.isDuplicateCheckin(idCompetitorEPC, idCompetitorBibNumber, offset)):
+            #print('Avoiding. Duplicated')
+            return False
         messageCheckin = { "checkpoint": { "id": self.id }, "timestamp": self.getTimestamp()-offset }
         if (idCompetitorEPC != None):
             messageCheckin["epc"] = idCompetitorEPC; 

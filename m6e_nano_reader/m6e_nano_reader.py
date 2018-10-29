@@ -55,8 +55,11 @@ class M6eNanoReader(reader.Reader):
         """
         print("Reading tags...")
         while True:
-            tags = self.nano.read()
-            if (len(tags) > 0):
-                _thread.start_new_thread(self.processTags, (tags, processCallback))
+            try:
+                tags = self.nano.read()
+                if (len(tags) > 0):
+                    _thread.start_new_thread(self.processTags, (tags, processCallback))
+            except Exception as e:
+                print(e)
 
         
