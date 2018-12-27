@@ -107,7 +107,7 @@ class Ind903Reader(reader.Reader):
                     if (int.from_bytes(epc,byteorder='big') == 0):
                         break # jumps out the inventory loop
                     epcString = binascii.hexlify(epc).decode()   
-                    #print (' ****  [EPC found: ' + epcString + '] ****')
+                    print (' [EPC: ' + epcString + ']')
                     _thread.start_new_thread(processCallback, (epcString, None))
             except Exception as ex:
                 traceback.print_exc()
