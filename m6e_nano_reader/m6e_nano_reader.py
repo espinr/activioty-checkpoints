@@ -44,8 +44,11 @@ class M6eNanoReader(reader.Reader):
         """
         for tag in tags:
             epc = tag.epc.decode("utf-8")
-            print(epc)
-            processCallback(epc, None)
+            validEPC = epcString[:8] 
+            # It expects only the first 8 chars -> Change this to allow any EPC
+            print (' [EPC: ' + validEPC + ']')
+            print(validEPC)
+            processCallback(validEPC, None)
 
     def doInventory(self, processCallback):
         """
