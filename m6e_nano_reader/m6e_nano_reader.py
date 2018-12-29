@@ -44,7 +44,7 @@ class M6eNanoReader(reader.Reader):
         """
         for tag in tags:
             epc = tag.epc.decode("utf-8")
-            validEPC = epcString[:8] 
+            validEPC = epc[:8] 
             # It expects only the first 8 chars -> Change this to allow any EPC
             print (' [EPC: ' + validEPC + ']')
             print(validEPC)
