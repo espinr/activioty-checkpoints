@@ -106,9 +106,11 @@ class Ind903Reader(reader.Reader):
                     epc = receivedPacket.getTagEPCFromInventoryData()
                     if (int.from_bytes(epc,byteorder='big') == 0):
                         break # jumps out the inventory loop
-                    epcString = binascii.hexlify(epc).decode()   
-                    print (' [EPC: ' + epcString + ']')
-                    _thread.start_new_thread(processCallback, (epcString, None))
+                    epcString = binascii.hexlify(epc).decode()
+                    validEPC = epcString[:8] 
+                    # It expects only the first 8 chars -> Change this to allow any EPC
+                    print (' [EPC: ' + validEPC + ']')
+                    _thread.start_new_thread(processCallback, (validEPC, None))
             except Exception as ex:
                 traceback.print_exc()
 
