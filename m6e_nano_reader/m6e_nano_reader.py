@@ -47,7 +47,6 @@ class M6eNanoReader(reader.Reader):
             validEPC = epc[:8] 
             # It expects only the first 8 chars -> Change this to allow any EPC
             print (' [EPC: ' + validEPC + ']')
-            print(validEPC)
             processCallback(validEPC, None)
 
     def doInventory(self, processCallback):
